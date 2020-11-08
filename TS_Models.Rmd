@@ -1,0 +1,229 @@
+---
+title: "Has temperature risen in past 100 years?"
+author: "Didier Bruneel"
+date: "11/7/2020"
+output: 
+  html_document:
+    theme: flatly
+    code_folding: show
+    df_print: paged
+---
+
+In this report, we put Time Series analysis into practice. We choose a simple monthly measure, the average temperature (In fahrenheit) measured in Central Park, New York from 1895 to today.
+
+```{r include=FALSE}
+library(forecast)
+library(ggplot2)
+library(readr)
+require(scales)
+library(zoo)
+library(naniar)
+library(dplyr)
+```
+
+## Load data
+We will be using the average monthly temperature measured in New York Central Park since 1895
+https://www.ncdc.noaa.gov/cag/city/time-series/USW00094728
+
+```{r }
+# Load data
+setwd("C:/RProjects/Kamino_R")
+Central_Park_Temperature = read.csv("data/USW00094728-tavg-all-8-1895-2020.csv", header=TRUE, stringsAsFactors=FALSE, skip = 4)
+head(Central_Park_Temperature)
+```
+
+## Data Cleanup
+
+
+```{r, echo=FALSE}
+# libraries: requires gglot2 and scales
+# Notice one record that registers at Value = -99. This indicates a missing element for that specific date
+# the next effort will handle this problem
+
+ggplot(data=Central_Park_Temperature, aes(x=Date, y=Value, group=1)) +
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(labels = comma) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+We notice one odd measure (temperature of -99, which indicate abasence of data). The following code replace this data point with the value that came just before it.
+
+```{r}
+# Needs libraries naniar and dplyr
+# replaces "-99" record with NA
+CP_Temp <- Central_Park_Temperature %>% replace_with_na_all(condition = ~.x == -99)
+
+# Needs library zoo
+# Replaces NA records by the Value of the record that comes just before it
+CP_Temp <- na.locf(CP_Temp)
+
+# Redrawind the plot, all records are now within the expected band
+ggplot(data=CP_Temp, aes(x=Date, y=Value, group=1)) +
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(labels = comma) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+## Can we answer the question already using a regression line?
+
+We can already notice the trend upwards.
+
+```{r}
+# Adding a linear regression line, we already see the trend upwards. 
+ggplot(data=CP_Temp, aes(x=Date, y=Value, group=1)) +
+  geom_line() +
+  geom_point() + 
+  scale_y_continuous(labels = comma) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_smooth(method="lm", se=FALSE)
+
+```
+
+## Let's analyse the ACF, PACF, residual graphs
+
+```{r}
+# Time to create a univariate time-series
+univar <- data.frame(CP_Temp$Value)
+
+# Creating a time series
+TimeSer <- ts(univar, start=c(1895,1), end=c(2020,8), frequency=12)
+
+#acf(TimeSer)
+ggAcf(TimeSer)
+
+pacf(TimeSer)
+
+plot(diff(TimeSer))
+
+```
+
+## Further useful visuals
+
+```{r}
+# Library: requires forecast
+# autoplot(TimeSer) +
+#   ggtitle("TimeSer") +
+#   xlab("Month") +
+#   ylab("Temperature (F)")
+
+# Data exploration using graphs
+ggseasonplot(TimeSer, year.labels = TRUE) +
+  ylab("Temperature (F)") +
+  ggtitle("Seasonal plot: Temperature per month")
+
+ggseasonplot(TimeSer, year.labels = TRUE, polar=TRUE)+
+  ylab("Temperature (F)") +
+  ggtitle("Polar seasonal plot: Temperature per month")
+
+# The horizontal lines indicate the means for each month
+ggsubseriesplot(TimeSer)+
+  ylab("Temperature (F)") +
+  ggtitle("Seasonal subseries plot: Temperature per month")
+
+# Analyse correlation on lags
+lags <- window(TimeSer, start=1992)
+gglagplot(lags)
+
+# Analyse subset
+lastFiveYears <- window(TimeSer, start=2015)
+#autoplot(lastFiveYears) + xlab("Month") + ylab("Temperature (F)")
+
+```
+
+Let's "forecast" using naive assumptions: Mean, Naive, and Seasonal Naive predictions
+
+```{r}
+#The slow decrease in the ACF as the lags increase is due to the trend, 
+# while the "scalloped" shape is due the seasonality.
+ggAcf(lastFiveYears, lag=48)
+
+#training <- window(TimeSer,start=2015,end=c(2019,1))
+fit1 <- meanf(window(TimeSer, start=2015,end=c(2019,1)),h=24)
+fit2 <- rwf(window(TimeSer, start=2015,end=c(2019,1)),h=24)
+fit3 <- snaive(window(TimeSer, start=2015,end=c(2019,1)),h=24)
+autoplot(window(TimeSer, start=2015)) +
+  autolayer(fit1, series="Mean", PI=FALSE) +
+  autolayer(fit2, series="Naïve", PI=FALSE) +
+  autolayer(fit3, series="Seasonal naïve", PI=FALSE) +
+  xlab("Year") + ylab("Temp") +
+  ggtitle("Forecasts") +
+  guides(colour=guide_legend(title="Forecast"))
+
+# Decomposition
+TimeSer %>% decompose(type="multiplicative") %>%
+  autoplot() + xlab("Year") +
+  ggtitle("Classical multiplicative decomposition
+    of electrical equipment index")
+
+#gghistogram(res) + ggtitle("Histogram of residuals")
+
+#ggAcf(res) + ggtitle("ACF of residuals")
+
+```
+
+Time to run Forecasting Models:
+
+```{r}
+############### Forecasting Models ####################
+
+
+####### Automated Forecasting using an ARIMA model
+
+#window(TimeSer, start=2015,end=c(2019,1)) %>% forecast() %>% autoplot()
+#window(TimeSer, start=2015,end=c(2019,1)) %>% ets() %>% autoplot()
+
+#msBest <- auto.arima(TimeSer)
+#msBest
+
+#theForecast <- forecast(object=msBest, h=12)
+#theForecast %>% autoplot()
+
+# Automated Forecasting using an ARIMA model
+fit_arima <- auto.arima(TimeSer)
+fit_arima
+
+forecast_arima <- forecast(object=fit_arima, h=24)
+forecast_arima
+
+#Plot forecast
+autoplot(window(TimeSer, start=2015)) +
+  autolayer(forecast_arima, series="ARIMA", PI=FALSE) +
+  xlab("Year") + ylab("Temperature") +
+  ggtitle("Forecast") +
+  guides(colour=guide_legend(title="Forecast"))
+
+#Including confidence intervals
+autoplot(window(TimeSer, start=2015)) +
+  autolayer(forecast_arima, series="ARIMA", PI=TRUE) +
+  xlab("Year") + ylab("Temperature") +
+  ggtitle("Forecast") +
+  guides(colour=guide_legend(title="Forecast"))
+
+#autoplot(window(forecast_arima, start=2015))
+
+```
+
+```{r}
+###### Exponential Smoothing
+
+fit_ets <- ets(TimeSer, model="ZZZ")
+summary(fit_ets)
+
+forecast_ets <- forecast(object=fit_ets, h=24)
+forecast_ets
+
+autoplot(window(TimeSer, start=2015)) +
+  autolayer(forecast_ets, series="ETS", PI=TRUE) +
+  xlab("Year") + ylab("Temperature") +
+  ggtitle("Forecast") +
+  guides(colour=guide_legend(title="Forecast"))
+
+```
+
+
