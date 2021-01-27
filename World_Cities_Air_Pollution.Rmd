@@ -1,0 +1,125 @@
+---
+pagetitle: "World Cities Air Pollution"
+output: 
+  html_document:
+    theme: flatly
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tidyr)
+library(purrr)
+
+#Loading the data
+df = read.csv("data/world_cities_air_quality.csv", header = TRUE, stringsAsFactors = TRUE)
+
+```
+
+
+### Cluster Analysis - Air pollution indicators for World cities:
+The following analysis is based on an example provided in the book "Cluster Analysis 5th Edition EVERITT LANDAU LEES."
+
+<a href="https://en.wikipedia.org/wiki/Cluster_analysis">Cluster analysis</a> or clustering is a set of techniques that helps reveal "hidden" patterns in the data. The goal is to group (cluster) objects that are more similar than others based on a set of features.
+
+In this example, we will use  seleral climate and human ecology variables collected from Cities around the world, and assess whether there is any evidence that there are groups of cities with similar profiles. If successful, it could be used to understand better why some cities are suffering more from pollution than others.
+
+The data was extracted from <a href="https://aqicn.org/city/beijing/">aqicn</a> as well as <https://www.un.org/en/development/desa/population/publications/database/index.asp> UN Desa Population Division</a>
+
+
+```{r, echo=FALSE}
+
+df
+
+```
+
+In this example, we will use  seven climate and human ecology variables to assess whether there is any evidence that there are groups of cities with similar profiles.
+
+### Scatterplot Matrix
+
+```{r, message=FALSE, echo=FALSE, fig.width=10.5, fig.height=7.5}
+
+# Scatterplot matrix
+pairs(df[,4:10], pch = 19)
+
+```
+
+The plot does not seem to reveal any obvious separate groups. It is possible to notice the presence of some outliers. 
+
+#### Preparing the data 
+First, let's normalize the data prior to running the algorithm.
+
+```{r, echo=FALSE}
+df$dew_s <- scale(df$dew)
+df$humidity_s <- scale(df$humidity)
+df$pressure_s <- scale(df$pressure)
+df$temperature_s <- scale(df$temperature)
+df$wind_gust_s <- scale(df$wind_gust)
+df$wind_speed_s <- scale(df$wind_speed)
+df$POP_s <- scale(df$POP)
+
+df[,c(1:3, 11:17)]
+```
+
+All above features are now "normalized". We substracted the vector's mean and divided each value with the vector's standard deviation. That way each feature will be using the same scale.
+
+#### Determining the number of clusters in this dataset
+
+```{r, message=FALSE, echo=FALSE, fig.width=10.5, fig.height=7.5}
+# Use purrr's map_dbl to run models with different value of k (centers)
+total_withinss <- map_dbl(1:10,  function(k){
+  model <- kmeans(x = df[,11:17], centers = k)
+  model$tot.withinss
+})
+
+# Using measure Total within-cluster sum of squares to compare model results
+elbow_df <- data.frame(
+  k = 1:10,
+  total_withinss = total_withinss
+)
+
+# Plot the elbow plot
+ggplot(elbow_df, aes(x = k, y = total_withinss)) +
+  geom_line() +
+  scale_x_continuous(breaks = 1:10)+
+  theme(
+    #plot.title = element_blank(),
+    #axis.title.x = element_blank(),
+    #axis.title.y = element_blank(),
+    #axis.text.x = element_blank(),
+    #axis.ticks.x =element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = unit(c(1, 5, 1, 1), "lines")
+  ) 
+
+```
+
+Notice the presence of an "elbow" at k=2, k=4 and again at k=6. It means that the model seems to have reached a peak in performance around these values. Let's use k=6 to run the model.
+
+#### Running the model
+
+
+```{r, echo=FALSE}
+clusters <- kmeans(df[,11:17], 4)
+
+df$group <- as.factor(clusters$cluster)
+
+df[,c(1:3, 18)]
+```
+
+### Conclusion
+
+As summarized in the following table, we end up with 4 clusters of various sizes.
+
+```{r, echo=FALSE}
+results <- df %>% select("City", "group") %>%
+  group_by(group) %>% 
+  mutate(list = paste(City, collapse = ",")) %>% select("group", "list") %>% distinct() %>% arrange(group)
+
+results
+```
+
+Based on these results, we can try and label the clusters as follows:<br>
+
