@@ -1,0 +1,149 @@
+---
+pagetitle: "Lean-Hogs Commody Prices"
+output: 
+  html_document:
+    theme: flatly
+    code_folding: show
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(tidyr)
+library(scales)
+
+#Loading the data
+#setwd('C:/RProjects/Kamino_R/control')
+df <- read.csv("data/control.csv")
+
+df$Date <- as.Date(df$Date, format="%Y-%m-%d")
+
+df1 <- df %>% mutate(R1 = ifelse(R1 == 1, "R1", "")) %>% 
+  mutate(R2 = ifelse(R2 == 1, "R2", "")) %>%
+  mutate(R3 = ifelse(R3 == 1, "R3", "")) %>%
+  mutate(R4 = ifelse(R4 == 1, "R4", "")) %>%
+  mutate(R5 = ifelse(R5 == 1, "R5", "")) %>%
+  mutate(R6 = ifelse(R6 == 1, "R6", "")) %>%
+  mutate(R7 = ifelse(R7 == 1, "R7", "")) %>%
+  mutate(R8 = ifelse(R8 == 1, "R8", ""))
+  
+df2 <- df %>% gather(key = "key", value = "label",
+               R1, R2, R3, R4, R5, R6, R7, R8)
+
+```
+
+
+### In 2019, the African swine fever devastated farming in China:
+<a href="https://www.economist.com/china/2019/05/25/aporkalypse-now">Article: The Economist May 25th 2019 edition - Aporkalypse now. African swine fever hits the home of half the world’s pigs</a>
+
+<p>According to this article, "Prices of the meat are about 40% higher than a year ago. Last month they rose by more than 14%"</p>
+
+### Could we have used the Nelson controls as an early warning system?
+
+<p>in the example below, we want to see if the Nelson's rules could have been used to alert us when the price of this commodity rised, signaling a disruption in this market.</p>
+
+#### First, let's take a look at the daily Closing price of Lean-pork commodity from 2016 to 2020:
+
+```{r, echo=FALSE}
+
+df
+
+```
+
+
+#### Let's plot this time series 
+(Note that we are plotting the 'Closing price' but the Rules were calculated on the 'Returns'. However, 'Closing price' is better to highlighting the differences to plot:
+
+
+```{r, message=FALSE, echo=FALSE, fig.width=10.5, fig.height=7.5}
+
+v1 <- ggplot(df, aes(x=Date, y=Close)) +
+  geom_line() + 
+  theme(panel.grid = element_blank(), 
+        #axis.ticks = element_blank(), 
+        #axis.text.x=element_blank(), 
+        #panel.border = element_blank(),
+        strip.background = element_blank(),
+        panel.background = element_blank()
+        #axis.title.x=element_blank(),
+        #axis.title.y=element_blank()
+  )  + 
+  scale_x_date(breaks = breaks_pretty(15))
+
+v1
+
+```
+
+<p>We notice the large jump in price at the beggining of 2019</p>
+
+#### Plotting the Nelson's rules.
+
+We calculated the 8 Netson rules for every data point in this time-series. Let's see what there rules were able to flag
+
+
+```{r, message=FALSE, echo=FALSE, fig.width=10.5, fig.height=7.5}
+
+v2 <- ggplot(df2, aes(x=Date, y=Close)) +
+  geom_line() +
+  geom_point(data=df2[df2$label == 1,],color="red",size=1) +
+  #geom_text(aes(label=label), color = 'red') +
+  facet_wrap(~key) + 
+  theme(panel.grid = element_blank(), 
+        #axis.ticks = element_blank(), 
+        #axis.text.x=element_blank(), 
+        #panel.border = element_blank(),
+        strip.background = element_blank(),
+        panel.background = element_blank()
+        #axis.title.x=element_blank(),
+        #axis.title.y=element_blank()
+  )  + 
+  scale_x_date(breaks = breaks_pretty(7))
+v2
+
+```
+
+From the above graph, it looks like rules R1, R3 and R6 were able to detect the choc we are trying to detect. Let's take a closer look
+
+#### Same plot as above, but centered on May 25th 2018 to May 25th 2019, only including rules R1, R3 and R6
+
+```{r, message=FALSE, echo=FALSE, fig.width=10.5, fig.height=7.5}
+
+df3 <- df2 %>% filter(Date > '2018/05/25' & Date < '2019/05/25') %>% filter(key == 'R1' | key == 'R3' | key == 'R6')
+
+v3 <- ggplot(df3, aes(x=Date, y=Close)) +
+  geom_line() +
+  geom_point(data=df3[df3$label == 1,],color="red",size=2) +
+  #geom_text(aes(label=label), color = 'red') +
+  facet_wrap(~key) + 
+  theme(panel.grid = element_blank(), 
+        #axis.ticks = element_blank(), 
+        #axis.text.x=element_blank(), 
+        #panel.border = element_blank(),
+        strip.background = element_blank(),
+        panel.background = element_blank()
+        #axis.title.x=element_blank(),
+        #axis.title.y=element_blank()
+  )
+v3
+```
+
+```{r, echo=FALSE}
+
+# Save plot to svg file
+ggsave(filename = "Lean-Hogs_Commody_Prices-v1.svg", plot = v1, width=12, height=6)
+ggsave(filename = "Lean-Hogs_Commody_Prices-v2.svg", plot = v2, width=12, height=6)
+ggsave(filename = "Lean-Hogs_Commody_Prices-v3.svg", plot = v3, width=12, height=6)
+
+```
+
+
+### Conclusion
+
+We conclude that Rule R1 was the first rule to flag an annomaly (actually on March 13th 2019). Howerver, this flag is being triggered quite frequently (21 times in the span of 5 years)
+R6 came second, and flagged an unusual activity in this market on March 14th and March 15th. This rule is less verbose than R1 and was triggered 9 times.
+Finally, R3 was triggered last, on March 29th 2019. But what's remarkable is that it was the only time it got triggered in 5 years.
+
+As a reminder, the rules indicate the following 'problems' in the series:
+R1: One sample (two shown in this case) is grossly out of control.
+R3: A trend exists.
+R6: There is a strong tendency for samples to be slightly out of control. The side of the mean for the fifth point is unspecified.

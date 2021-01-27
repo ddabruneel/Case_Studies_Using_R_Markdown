@@ -1,15 +1,13 @@
 ---
-title: "Has temperature risen in past 100 years?"
-author: "Didier Bruneel"
-date: "11/7/2020"
+pagetitle: "Has temperature risen in past 100 years?"
 output: 
   html_document:
     theme: flatly
     code_folding: show
     df_print: paged
 ---
-
-In this report, we put Time Series analysis into practice. We choose a simple monthly measure, the average temperature (In fahrenheit) measured in Central Park, New York from 1895 to today.
+## Has temperature really risen in the past 100 years?
+In this report, we put Time Series analysis into practice. We choose a simple measure, the monthly average temperature (In fahrenheit) measured in Central Park, New York from 1895 to today to 
 
 ```{r include=FALSE}
 library(forecast)
