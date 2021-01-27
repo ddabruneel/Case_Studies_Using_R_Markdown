@@ -1,3 +1,4 @@
-https://ddabruneel.github.io/Has_Temp_Risen_Time_Serie_Analysis_in_R/
+## click the link below to see the list of outputs
 
-[a relative link](docs/temperature.html)
+https://ddabruneel.github.io/Case_Studies_Using_R_Markdown/.
+
