@@ -1,10 +1,17 @@
 ---
-pagetitle: "Lean-Hogs Commody Prices"
+pagetitle: "Lean Hogs Commodity Prices"
 output: 
   html_document:
-    theme: flatly
-    code_folding: show
+    theme: lumen
+    css: ["./assemblers/dsr.css"]
     df_print: paged
+    mathjax: NULL
+    code_folding: hide
+    include:
+      in_header: "./assemblers/header.html"
+      after_body: "./assemblers/footer.html"
+    #self_contained: false
+    #lib_dir: libs
 ---
 
 ```{r setup, include=FALSE}
@@ -130,9 +137,9 @@ v3
 ```{r, echo=FALSE}
 
 # Save plot to svg file
-ggsave(filename = "Lean-Hogs_Commody_Prices-v1.svg", plot = v1, width=12, height=6)
-ggsave(filename = "Lean-Hogs_Commody_Prices-v2.svg", plot = v2, width=12, height=6)
-ggsave(filename = "Lean-Hogs_Commody_Prices-v3.svg", plot = v3, width=12, height=6)
+# ggsave(filename = "Lean-Hogs_Commody_Prices-v1.svg", plot = v1, width=12, height=6)
+# ggsave(filename = "Lean-Hogs_Commody_Prices-v2.svg", plot = v2, width=12, height=6)
+# ggsave(filename = "Lean-Hogs_Commody_Prices-v3.svg", plot = v3, width=12, height=6)
 
 ```
 

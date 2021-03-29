@@ -1,0 +1,33 @@
+From: Kersten Jauer <jauer@un.org>
+Date: Tuesday, March 9, 2021 at 7:35 PM
+To: Yoon Barker <barker@un.org>
+Cc: Jessica Anne Summers <summers@un.org>
+Subject: [Data Strategy] Specs for 'people capacity' dashboards with BTAD support
+
+ 
+
+Dear Yoon,
+
+It's taken a bit: The specs for the dashboards on data-related 'people capacity' are now attached.
+
+It would be great to get your team's support on the data models, review together with our colleagues from the HR workstream, and then visualize.
+ 
+Essentially, it's three priority concepts:
+
+1) % of encumbered posts with data-focused functional titles (specialists)
+2) % of staff selections with data-focused description title (specialists)
+3) % of staff selections (non-specialists) with data-related content in the job description  
+
+We look forward to supporting your team on this and make connections to other colleagues where needed.
+
+Maybe, 1) and 2) are most straightforward to get started on?
+
+It would be great to get something basic up by 15 April.
+
+Please let us know if you / the team have questions.
+
+Thank you!
+
+Kersten
+
+ 

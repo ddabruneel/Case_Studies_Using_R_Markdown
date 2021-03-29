@@ -1,10 +1,17 @@
 ---
-pagetitle: "Has temperature risen in past 100 years?"
+pagetitle: "Has temperature risen in the past 100 years?"
 output: 
   html_document:
-    theme: flatly
-    code_folding: show
+    theme: lumen
+    css: ["./assemblers/dsr.css"]
     df_print: paged
+    mathjax: NULL
+    code_folding: hide
+    include:
+      in_header: "./assemblers/header.html"
+      after_body: "./assemblers/footer.html"
+    #self_contained: false
+    #lib_dir: libs
 ---
 ## Has temperature really risen in the past 100 years?
 In this report, we put Time Series analysis into practice. We choose a simple measure, the monthly average temperature (In fahrenheit) measured in Central Park, New York from 1895 to today to 
